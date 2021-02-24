@@ -1,19 +1,30 @@
 package com.xiaojihua.springcloudstream;
 
 import com.xiaojihua.springcloudstream.channels.Barista;
+import com.xiaojihua.springcloudstream.channels.PolledConsumer;
 import com.xiaojihua.springcloudstream.domain.Person;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
+import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.annotation.EnableAsync;
+
+import java.util.Map;
 
 @SpringBootApplication
 //对应handle1
@@ -22,9 +33,14 @@ import org.springframework.scheduling.annotation.EnableAsync;
 //@EnableBinding({Processor.class})
 //对应handle3
 //@EnableBinding(Barista.class)
-//对应handle4 5
-@EnableBinding({Processor.class,Barista.class})
+//对应handle4 5 6
+//@EnableBinding({Processor.class,Barista.class})
+//对应handle 7 8
+//@EnableBinding({Sink.class})
+//对应handle 9 10
+@EnableBinding({PolledConsumer.class})
 public class SpringcloudstreamApplication {
+    private final Logger logger = LoggerFactory.getLogger(SpringcloudstreamApplication.class);
 
     public static void main(String[] args) {
         SpringApplication.run(SpringcloudstreamApplication.class, args);
@@ -101,10 +117,62 @@ public class SpringcloudstreamApplication {
      * @param value
      * @param header
      */
-    @StreamListener("orders")
-    public void handle6(@Payload String value, @Header("header") String header){
-        System.out.println("payload:" + value);
-        System.out.println("header:" + header);
+//    @StreamListener("orders")
+//    public void handle6(@Payload String value, @Header("header") String header){
+//        System.out.println("payload:" + value);
+//        System.out.println("header:" + header);
+//    }
+
+
+    /**
+     *所有消息头中带有type并且值为bogey的消息，由此方法处理
+     * @param person
+     */
+//    @StreamListener(target=Sink.INPUT,condition = "headers['type']=='bogey'")
+//    public void handle7(@Payload Person person){
+//        System.out.println("收到headers['type']=='bogey'的payload:" + person);
+//    }
+
+    /**
+     *所有消息头中带有type并且值为bacall的消息，由此方法处理
+     * @param person
+     */
+//    @StreamListener(target=Sink.INPUT,condition = "headers['type']=='bacall'")
+//    public void handle8(@Payload Person person){
+//        System.out.println("收到headers['type']=='bacall'的payload:" + person);
+//    }
+
+    /**
+     * 测试使用轮询消息 消费者
+     * @param destIn
+     * @param destOut
+     * @return
+     */
+    @Bean
+    public ApplicationRunner handle9(PollableMessageSource destIn, MessageChannel destOut) {
+        return args -> {
+            while (true) {
+
+                boolean flag = destIn.poll(m -> {
+                    Map<String,Object> newPayload = (Map<String,Object>) m.getPayload();
+                    System.out.println("轮询消费者接收到消息："  + newPayload);
+                    destOut.send(new GenericMessage<>(newPayload));
+                },new ParameterizedTypeReference<Map<String,Object>>(){});
+                System.out.println(flag);
+                Thread.sleep(1000);
+            }
+
+
+        };
     }
 
+    /**
+     * 监听PollableMessageSource 对应的output
+     * @param value
+     */
+    @StreamListener("destOut")
+    public void handle10(@Payload String value){
+        System.out.println("payload:" + value);
+    }
+    
 }
