@@ -17,6 +17,9 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.annotation.Transformer;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -38,7 +41,9 @@ import java.util.Map;
 //对应handle 7 8
 //@EnableBinding({Sink.class})
 //对应handle 9 10
-@EnableBinding({PolledConsumer.class})
+//@EnableBinding({PolledConsumer.class})
+//对应handle 11 errorHandle1 errorHandle2
+@EnableBinding({Sink.class})
 public class SpringcloudstreamApplication {
     private final Logger logger = LoggerFactory.getLogger(SpringcloudstreamApplication.class);
 
@@ -148,31 +153,65 @@ public class SpringcloudstreamApplication {
      * @param destOut
      * @return
      */
-    @Bean
-    public ApplicationRunner handle9(PollableMessageSource destIn, MessageChannel destOut) {
-        return args -> {
-            while (true) {
-
-                boolean flag = destIn.poll(m -> {
-                    Map<String,Object> newPayload = (Map<String,Object>) m.getPayload();
-                    System.out.println("轮询消费者接收到消息："  + newPayload);
-                    destOut.send(new GenericMessage<>(newPayload));
-                },new ParameterizedTypeReference<Map<String,Object>>(){});
-                System.out.println(flag);
-                Thread.sleep(1000);
-            }
-
-
-        };
-    }
+//    @Bean
+//    public ApplicationRunner handle9(PollableMessageSource destIn, MessageChannel destOut) {
+//        return args -> {
+//            while (true) {
+//
+//                boolean flag = destIn.poll(m -> {
+//                    Map<String,Object> newPayload = (Map<String,Object>) m.getPayload();
+//                    System.out.println("轮询消费者接收到消息："  + newPayload);
+//                    destOut.send(new GenericMessage<>(newPayload));
+//                },new ParameterizedTypeReference<Map<String,Object>>(){});
+//                System.out.println(flag);
+//                Thread.sleep(1000);
+//            }
+//
+//
+//        };
+//    }
 
     /**
      * 监听PollableMessageSource 对应的output
      * @param value
      */
-    @StreamListener("destOut")
-    public void handle10(@Payload String value){
-        System.out.println("payload:" + value);
+//    @StreamListener("destOut")
+//    public void handle10(@Payload String value){
+//        System.out.println("payload:" + value);
+//    }
+
+    /**
+     * 测试异常处理
+     * @param person
+     */
+    @StreamListener(Sink.INPUT)
+    public void handle11(Person person){
+        //接收消息后即抛出异常
+        throw new RuntimeException("BOOM!");
     }
+
+    /**
+     * 具体绑定级别的异常处理
+     * 监控某个具体的绑定，如：现在监控的是Sink.INPUT这个绑定的异常
+     * inputChannel： 绑定名.组名.errors
+     * 其中组名需要在配置文件中指定，不能使用匿名的。
+     *
+     * 对于异常处理方法需要使用@ServiceActivator或@Transformer（这个注解还需要调试和进一步学习）
+     * @param message
+     */
+//    @ServiceActivator(inputChannel = Sink.INPUT + ".myGroup.errors")
+//    public void errorHandle1(Message<?> message){
+//        System.out.println("errorHandle1 Handling error:" + message);
+//    }
+
+    /**
+     * 全局异常处理，经测试虽然对异常进行了处理，但还是会抛出
+     * @param message
+     */
+//    @StreamListener("errorChannel")
+//    public void errorHandle2(Message<?> message){
+//        System.out.println("errorHandle2 Handling error:" + message);
+//    }
+
     
 }

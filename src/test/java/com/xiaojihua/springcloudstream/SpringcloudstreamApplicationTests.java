@@ -1,36 +1,35 @@
 package com.xiaojihua.springcloudstream;
 
 import com.xiaojihua.springcloudstream.channels.Barista;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import javax.annotation.Resource;
 
+import static org.junit.Assert.assertNotNull;
+
+@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
-class SpringcloudstreamApplicationTests {
+public class SpringcloudstreamApplicationTests {
 
     @Autowired
     private Sink sink;
-    @Autowired
-    private Barista barista;
 
     /**
      * 测试 Sink接口的自动实现
      */
     @Test
-    void contextLoads() {
+    public void contextLoads() {
         assertNotNull(this.sink.input());
     }
 
-    /**
-     * 测试 自定义通道接口的自动实现
-     */
-    @Test
-    void contextLoads1() {
-        assertNotNull(this.barista.orders());
-    }
+
 
 
 }

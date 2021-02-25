@@ -1,2 +1,19 @@
 server:
   port: 8009
+
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          # 指定绑定的组名
+          group: myGroup
+          consumer:
+            max-attempts: 1
+      rabbit:
+        bindings:
+          input:
+            consumer:
+              # 配置 开启rabbit 死信队列  当没有配置异常处理方法时，异常将传递给具体的消息代理，由消息代理对消息进行处理（）
+              auto-bind-dlq: true
+              requeue-rejected: true
